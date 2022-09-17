@@ -21,19 +21,21 @@ In this case, you can create a tunnel from your local machine to a master server
 
 ### Scheme
 ```
-(no_access:8080) -- | Firewall | -- (has_access:8080) --- | Gateway | ---- (example.com:80)
+(no_access:8080) -- (has_access:8080) -- | Firewall | -- | Gateway | -- (example.com:80)
 ```
 
 ### Usage
 
-1. Create a tunnel from your local machine to the master server.
+1. Create a tunnel from ```example.com``` to the server ```has_access```.
  
 ```bash
-$ xtunnel -m has_access:8080 -t example.com:80 -p tcp
+$ xtunnel start -m has_access:8080 -t example.com:80 -p tcp
 ```
 
-2. Create a tunnel from the master server to the target server.
+2. Create a tunnel from ```has_access``` to the server ```no_access```.
 
 ```bash
-$ xtunnel -m no_access:8080 -t has_access:8080 -p tcp
+$ xtunnel start -m no_access:8080 -t has_access:8080 -p tcp
 ```
+
+Now you can access ```example.com``` from ```no_access```.
