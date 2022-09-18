@@ -25,24 +25,24 @@ import (
 	cli "github.com/urfave/cli/v2"
 )
 
-func Start() *cli.Command {
+func Forward() *cli.Command {
 	return &cli.Command{
-		Name:    "start",
-		Aliases: []string{"s"},
+		Name:    "forward",
+		Aliases: []string{"f"},
 		Usage:   "Forwards remote connections to local port",
 		Flags: []cli.Flag{
-			// -m, --master flag
+			// -r, --remote flag
 			&cli.StringFlag{
-				Name:     "master",
-				Aliases:  []string{"m"},
-				Usage:    "Master node",
+				Name:     "remote",
+				Aliases:  []string{"r"},
+				Usage:    "Remote node",
 				Required: true,
 			},
-			// -t, --target flag
+			// -l, --local flag
 			&cli.StringFlag{
-				Name:     "target",
-				Aliases:  []string{"t"},
-				Usage:    "Target node",
+				Name:     "local",
+				Aliases:  []string{"l"},
+				Usage:    "Local node",
 				Required: true,
 			},
 			// -p, --protocol flag
@@ -56,36 +56,36 @@ func Start() *cli.Command {
 		Action: func(ctx *cli.Context) error {
 			log.Println("Starting tunnel...")
 
-			master := ctx.String("master")
-			log.Printf("Using %s as master node\n", master)
+			local := ctx.String("local")
+			log.Printf("Using %s as local node\n", local)
 
-			target := ctx.String("target")
-			log.Printf("Dialling %s, and using it as target node\n", target)
+			remote := ctx.String("remote")
+			log.Printf("Dialling %s, and using it as remote node\n", remote)
 
 			protocol := ctx.String("protocol")
 			log.Printf("Using %s as protocol\n", protocol)
 
-			masterHost, masterPort := strings.Split(master, ":")[0], strings.Split(master, ":")[1]
-			log.Printf("Master info: %s, port: %s\n", masterHost, masterPort)
+			localHost, localPort := strings.Split(local, ":")[0], strings.Split(local, ":")[1]
+			log.Printf("Local info: %s, port: %s\n", localHost, localPort)
 
-			targetHost, targetPort := strings.Split(target, ":")[0], strings.Split(target, ":")[1]
-			log.Printf("Target info: %s, port: %s\n", targetHost, targetPort)
+			remoteHost, remotePort := strings.Split(remote, ":")[0], strings.Split(remote, ":")[1]
+			log.Printf("Remote info: %s, port: %s\n", remoteHost, remotePort)
 
-			masterPortN, err := strconv.Atoi(masterPort)
+			localPortN, err := strconv.Atoi(localPort)
 			if err != nil {
 				return err
 			}
 
-			targetPortN, err := strconv.Atoi(targetPort)
+			remotePortN, err := strconv.Atoi(remotePort)
 			if err != nil {
 				return err
 			}
 
-			masterNode := pkg.NewNode(masterHost, masterPortN)
-			targetNode := pkg.NewNode(targetHost, targetPortN)
+			localNode := pkg.NewNode(localHost, localPortN)
+			remoteNode := pkg.NewNode(remoteHost, remotePortN)
 
 			log.Println("Connection established")
-			if err := pkg.CreateTunnel(protocol, masterNode, targetNode); err != nil {
+			if err := pkg.CreateTunnel(protocol, localNode, remoteNode); err != nil {
 				return err
 			}
 

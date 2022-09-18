@@ -5,12 +5,15 @@
 
 xtunnel is a simple tunneling tool that allows you to create a tunnel in different ways.
 
+Note: This tool is still in development and is not ready for production use. All connection is done over insecure channels.
+
 ## Installation
 
 You can download binary files for each platform from [the latest releases](https://github.com/eminmuhammadi/xtunnel/releases).
 
 ## Usage
 
+### Port Forwarding
 ```bash
-xtunnel start --master <local-ip>:9090 --target example.com:80 --protocol tcp4
+xtunnel forward --local <local-ip>:<local-port> --remote <remote-ip>:<tcp-port> --protocol tcp
 ```

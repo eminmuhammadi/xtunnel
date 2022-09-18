@@ -33,7 +33,6 @@ type Node struct {
 type Tunnel struct {
 	Protocol string
 	Listener net.Listener
-	Target   *Node
 }
 
 // Creates a new node
@@ -45,7 +44,7 @@ func NewNode(host string, port int) *Node {
 }
 
 // Listen announces on the local network address.
-func (node *Node) Listen(protocol string, target *Node) (Tunnel, error) {
+func (node *Node) Listen(protocol string) (Tunnel, error) {
 	listener, err := net.Listen(protocol, fmt.Sprintf("%s:%d", node.Host, node.Port))
 
 	if err != nil {
@@ -55,7 +54,6 @@ func (node *Node) Listen(protocol string, target *Node) (Tunnel, error) {
 	return Tunnel{
 		Protocol: protocol,
 		Listener: listener,
-		Target:   target,
 	}, nil
 }
 
@@ -100,9 +98,9 @@ func Handshake(local net.Conn, remote net.Conn) {
 }
 
 // Creates a new reverse tunnel
-func CreateTunnel(protocol string, master *Node, target *Node) error {
-	// Listen on master
-	tunnel, err := master.Listen(protocol, target)
+func CreateTunnel(protocol string, local *Node, remote *Node) error {
+	// Listen on local
+	tunnel, err := local.Listen(protocol)
 
 	if err != nil {
 		return err
@@ -111,14 +109,14 @@ func CreateTunnel(protocol string, master *Node, target *Node) error {
 	defer tunnel.Listener.Close()
 
 	for {
-		// Accept connections from master
+		// Accept connections from local
 		local, err := tunnel.Listener.Accept()
 		if err != nil {
 			return err
 		}
 
-		// Dial to target
-		remote, err := target.Dial(protocol)
+		// Dial to remote
+		remote, err := remote.Dial(protocol)
 		if err != nil {
 			return err
 		}

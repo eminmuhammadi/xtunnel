@@ -34,7 +34,7 @@ var (
 )
 
 var commands = []*cli.Command{
-	cmd.Start(),
+	cmd.Forward(),
 }
 
 // Metadata for current release
