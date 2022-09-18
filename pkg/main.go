@@ -18,6 +18,8 @@ package pkg
 
 import (
 	"fmt"
+	"io"
+	"log"
 	"net"
 )
 
@@ -26,9 +28,6 @@ type Node struct {
 	Host string
 	Port int
 }
-
-type RequestHandler func(conn net.Conn) ([]byte, error)
-type ResponseHandler func(protocol string, target Node, request []byte) ([]byte, error)
 
 // Tunnel
 type Tunnel struct {
@@ -46,7 +45,7 @@ func NewNode(host string, port int) *Node {
 }
 
 // Listen announces on the local network address.
-func (node *Node) Forward(protocol string, target *Node) (Tunnel, error) {
+func (node *Node) Listen(protocol string, target *Node) (Tunnel, error) {
 	listener, err := net.Listen(protocol, fmt.Sprintf("%s:%d", node.Host, node.Port))
 
 	if err != nil {
@@ -60,37 +59,6 @@ func (node *Node) Forward(protocol string, target *Node) (Tunnel, error) {
 	}, nil
 }
 
-// Accept waits for and returns the next connection to the listener.
-func (tunnel *Tunnel) Expose(requestHandler RequestHandler, responseHandler ResponseHandler) error {
-	for {
-		conn, err := tunnel.Listener.Accept()
-
-		if err != nil {
-			return err
-		}
-
-		go func() {
-			defer conn.Close()
-
-			for {
-				request, err := requestHandler(conn)
-
-				if err != nil {
-					break
-				}
-
-				response, err := responseHandler(tunnel.Protocol, *tunnel.Target, request)
-
-				if err != nil {
-					break
-				}
-
-				conn.Write(response)
-			}
-		}()
-	}
-}
-
 // Dial connects to the address on the named network.
 func (node *Node) Dial(protocol string) (net.Conn, error) {
 	conn, err := net.Dial(protocol, fmt.Sprintf("%s:%d", node.Host, node.Port))
@@ -102,50 +70,60 @@ func (node *Node) Dial(protocol string) (net.Conn, error) {
 	return conn, nil
 }
 
-// Request
-func Request(conn net.Conn) ([]byte, error) {
-	request := make([]byte, 1024)
-	_, err := conn.Read(request)
+// Reverse data transfer
+func Handshake(local net.Conn, remote net.Conn) {
+	defer local.Close()
+	defer remote.Close()
 
-	if err != nil {
-		return nil, err
-	}
+	done := make(chan bool)
 
-	return request, nil
+	// Start remote -> local data transfer
+	go func() {
+		_, err := io.Copy(local, remote)
+		if err != nil {
+			log.Println(err)
+		}
+		done <- true
+	}()
+
+	// Start local -> remote data transfer
+	go func() {
+		_, err := io.Copy(remote, local)
+		if err != nil {
+			log.Println(err)
+		}
+		done <- true
+	}()
+
+	// Wait for data transfer to finish
+	<-done
 }
 
-// Response
-func Response(protocol string, target Node, request []byte) ([]byte, error) {
-	conn, err := target.Dial(protocol)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer conn.Close()
-
-	conn.Write(request)
-
-	response := make([]byte, 1024)
-	_, err = conn.Read(response)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return response, nil
-}
-
-// Create a tunnel
+// Creates a new reverse tunnel
 func CreateTunnel(protocol string, master *Node, target *Node) error {
-	listener, err := master.Forward(protocol, target)
+	// Listen on master
+	tunnel, err := master.Listen(protocol, target)
+
 	if err != nil {
 		return err
 	}
 
-	if err := listener.Expose(Request, Response); err != nil {
-		return err
-	}
+	defer tunnel.Listener.Close()
 
-	return nil
+	for {
+		// Accept connections from master
+		local, err := tunnel.Listener.Accept()
+		if err != nil {
+			return err
+		}
+
+		// Dial to target
+		remote, err := target.Dial(protocol)
+		if err != nil {
+			return err
+		}
+
+		// Start data transfer
+		go Handshake(local, remote)
+	}
 }

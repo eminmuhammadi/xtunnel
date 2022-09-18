@@ -29,7 +29,7 @@ func Start() *cli.Command {
 	return &cli.Command{
 		Name:    "start",
 		Aliases: []string{"s"},
-		Usage:   "Start tunnel from master to slave",
+		Usage:   "Forwards remote connections to local port",
 		Flags: []cli.Flag{
 			// -m, --master flag
 			&cli.StringFlag{
@@ -49,27 +49,27 @@ func Start() *cli.Command {
 			&cli.StringFlag{
 				Name:     "protocol",
 				Aliases:  []string{"p"},
-				Usage:    "Protocol",
+				Usage:    "Protocols for tunneling. E.g \"tcp\", \"tcp4\", \"tcp6\", \"unix\" or \"unixpacket\"",
 				Required: true,
 			},
 		},
 		Action: func(ctx *cli.Context) error {
-			log.Println("[xtunnel] Starting tunnel...")
+			log.Println("Starting tunnel...")
 
 			master := ctx.String("master")
-			log.Printf("[xtunnel] Using %s as master node\n", master)
+			log.Printf("Using %s as master node\n", master)
 
 			target := ctx.String("target")
-			log.Printf("[xtunnel] Dialling %s, and using it as target node\n", target)
+			log.Printf("Dialling %s, and using it as target node\n", target)
 
 			protocol := ctx.String("protocol")
-			log.Printf("[xtunnel] Using %s as protocol\n", protocol)
+			log.Printf("Using %s as protocol\n", protocol)
 
 			masterHost, masterPort := strings.Split(master, ":")[0], strings.Split(master, ":")[1]
-			log.Printf("[xtunnel] Master info: %s, port: %s\n", masterHost, masterPort)
+			log.Printf("Master info: %s, port: %s\n", masterHost, masterPort)
 
 			targetHost, targetPort := strings.Split(target, ":")[0], strings.Split(target, ":")[1]
-			log.Printf("[xtunnel] Target info: %s, port: %s\n", targetHost, targetPort)
+			log.Printf("Target info: %s, port: %s\n", targetHost, targetPort)
 
 			masterPortN, err := strconv.Atoi(masterPort)
 			if err != nil {
@@ -84,7 +84,7 @@ func Start() *cli.Command {
 			masterNode := pkg.NewNode(masterHost, masterPortN)
 			targetNode := pkg.NewNode(targetHost, targetPortN)
 
-			log.Println("[xtunnel] Connection established")
+			log.Println("Connection established")
 			if err := pkg.CreateTunnel(protocol, masterNode, targetNode); err != nil {
 				return err
 			}

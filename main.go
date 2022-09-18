@@ -40,7 +40,7 @@ var commands = []*cli.Command{
 // Metadata for current release
 const METADATA string = `{
     "name": "xtunnel",
-	"description": "TCP/UDP reverse tunneling tool",
+	"description": "TCP/UDP/Unix reverse tunneling tool",
     "version": "%s",
     "author": {
         "name": "Emin Muhammadi",
